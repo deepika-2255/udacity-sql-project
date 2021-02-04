@@ -1,0 +1,87 @@
+Question 1 for slide 1
+-----------------------
+Query 1.
+Create a query that lists each movie, the film category it is classified in, and the number of times it has been rented out.
+
+SELECT DISTINCT(f.title) film_title,
+       c.name category_name,
+       COUNT(r.rental_date) OVER (PARTITION BY f.title ORDER BY f.title) AS rental_count
+FROM film f
+JOIN film_category fc
+ON f.film_id = fc.film_id
+JOIN category c
+ON fc.category_id = c.category_id
+JOIN inventory i
+ON f.film_id = i.film_id
+JOIN rental r
+ON i.inventory_id = r.inventory_id
+WHERE c.name = 'Music'
+	  OR c.name = 'Family'
+      OR c.name = 'Children'
+      OR c.name = 'Classics'
+      OR c.name = 'Comedy'
+	  OR c.name = 'Animation'
+ORDER BY c.name, f.title;
+
+
+Question 2 for slide 2
+----------------------
+Query 2.
+Can you provide a table with the movie titles and divide them into 4 levels (first_quarter, second_quarter, third_quarter, and final_quarter) based on the quartiles (25%, 50%, 75%) of the rental duration for movies across all categories?
+
+SELECT f.title, c.name, f.rental_duration,
+       NTILE(4) OVER(ORDER BY f.rental_duration) AS standard_quartile
+FROM category AS c
+JOIN film_category AS fc
+ON c.category_id = fc.category_id
+AND c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+JOIN film AS f
+ON f.film_id = fc.film_id
+ORDER BY 4;
+
+
+Question 3 for slide 3
+----------------------
+Query 3.
+provide a table with the family-friendly film category, each of the quartiles, and the corresponding count of movies within each combination of film category for each corresponding rental duration category. The resulting table should have three columns:
+
+.Category
+.Rental length category
+.Count
+
+SELECT
+	category,
+	percentile_rental_duration,
+	count(*)
+FROM(
+SELECT
+	c.name AS category,
+	f.rental_duration AS rental_duration,
+	NTILE(4) OVER ( ORDER BY f.rental_duration) AS percentile_rental_duration
+FROM film f
+JOIN film_category fc
+ON f.film_id=fc.film_id
+JOIN category c
+ON fc.category_id=c.category_id
+WHERE c.name IN ('Animation','Children','Classics','Comedy','Family','Music')
+) sub
+GROUP BY 1,2
+ORDER BY 1,2;
+
+
+Question 4 for slide 4
+----------------------
+Query 4.
+query that returns the store ID for the store, the year and month and the number of rental orders each store has fulfilled for that month. Your table should include a column for each of the following: year, month, store ID and count of rental orders fulfilled during that month.
+
+SELECT DATE_PART('month', r.rental_date) Rental_month,
+       DATE_PART('year', r.rental_date) Rental_year,
+       s.store_id Store_id,
+       count(*) Rentals_count
+FROM rental r
+JOIN staff sf
+ON r.staff_id = sf.staff_id
+JOIN store s
+ON s.store_id = sf.store_id
+GROUP BY 1,2,3
+ORDER BY 4 desc;
